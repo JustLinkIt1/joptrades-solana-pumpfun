@@ -41,8 +41,15 @@ Weigh: creator buy-in size (conviction) vs. how much of supply they hold (dump r
 implied market cap, and name/theme quality. This launch already cleared a spam filter, so
 judge it as a real candidate — if it's a reasonable speculative punt, say BUY. Respond with the JSON object only.`;
 
-  const text = await claudeComplete({ system: SYSTEM, prompt });
-  return parseDecision(text);
+  let decision = parseDecision(await claudeComplete({ system: SYSTEM, prompt }));
+
+  // Calls are scarce (one per window) — if Claude didn't return clean JSON,
+  // retry once with a stricter nudge rather than wasting the slot on a fallback HOLD.
+  if (decision.redFlags.includes('unparseable-response')) {
+    const strict = prompt + '\n\nIMPORTANT: reply with ONLY the raw JSON object, starting with { and ending with }. No markdown fences, no commentary.';
+    decision = parseDecision(await claudeComplete({ system: SYSTEM, prompt: strict }));
+  }
+  return decision;
 }
 
 function parseDecision(text) {
@@ -54,7 +61,9 @@ function parseDecision(text) {
     redFlags: ['unparseable-response'],
   };
   try {
-    const match = text.match(/\{[\s\S]*\}/);
+    // Strip markdown code fences if Claude wrapped the JSON in them.
+    const clean = String(text).replace(/```(?:json)?/gi, '');
+    const match = clean.match(/\{[\s\S]*\}/);
     if (!match) return fallback;
     const p = JSON.parse(match[0]);
     const action = p.action === 'BUY' ? 'BUY' : 'HOLD';
