@@ -1,0 +1,23 @@
+{
+  "name": "joptrades-solana-pumpfun",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI-driven pump.fun auto-trader on Solana. Claude (via a Claude Code subscription proxy) is the analyst.",
+  "scripts": {
+    "proxy": "node claude-proxy/server.mjs",
+    "bot": "node src/bot.mjs",
+    "balance": "node src/balance.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+    "@solana/web3.js": "^1.98.0",
+    "bs58": "^6.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
