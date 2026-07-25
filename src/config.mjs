@@ -27,11 +27,12 @@ export const config = {
   priorityFeeSol: num(process.env.PRIORITY_FEE_SOL, 0.00005),
   minConfidence: num(process.env.MIN_CONFIDENCE, 0.65),
 
-  // Throttle Claude usage: analyze at most one launch per this many ms, and
-  // skip launches where the creator bought less than this much SOL (cheap
-  // local filter — no Claude call). Both cut subscription/API consumption.
-  analyzeCooldownMs: num(process.env.ANALYZE_COOLDOWN_MS, 20000),
-  minCreatorBuySol: num(process.env.MIN_CREATOR_BUY_SOL, 0.05),
+  // Usage control: every window we send Claude ONLY the single strongest
+  // buffered launch (biggest creator buy). Bigger interval = fewer calls.
+  analyzeIntervalMs: num(process.env.ANALYZE_INTERVAL_MS, 90000),
+  // A launch must have at least this much creator buy-in to be considered
+  // at all (local filter, no Claude call) — cuts the endless zero-effort spam.
+  minCreatorBuySol: num(process.env.MIN_CREATOR_BUY_SOL, 0.3),
 
   // Exits (fraction of entry)
   takeProfitPct: num(process.env.TAKE_PROFIT_PCT, 0.5),

@@ -3,10 +3,19 @@
 // analyst is Claude (via the Claude Code proxy) and the asset is a pump.fun coin.
 import { claudeComplete } from './claudeClient.mjs';
 
-const SYSTEM = `You are a disciplined memecoin trading analyst for pump.fun tokens on Solana.
-You are ruthless about risk: the vast majority of pump.fun launches go to zero, are
-rug pulls, or are bundled/sniped. Your default stance is HOLD (do nothing). Only
-recommend BUY when the specific data in front of you is unusually favorable.
+const SYSTEM = `You are a pump.fun launch scout on Solana. You are shown the single
+strongest new launch of the last window — the one whose creator committed the most SOL.
+Every pump.fun buy is high-risk speculation and many go to zero, but your job is to pick
+the launches worth a SMALL speculative punt, not to avoid all risk.
+
+Decide BUY vs HOLD:
+- BUY (confidence 0.6-0.8) when the launch has genuine positives: real creator commitment,
+  a coherent/memorable name or theme, sensible market cap, and no glaring rug signals.
+  You do NOT need certainty — a promising speculative launch is a BUY.
+- HOLD only when there are clear red flags (creator dumping, obvious copy/spam, contradictory
+  data) or nothing at all distinguishes it.
+
+Do not reflexively HOLD. If this is a reasonable speculative launch, say BUY.
 
 Return ONLY a JSON object, no prose, in exactly this shape:
 {
@@ -22,14 +31,15 @@ Return ONLY a JSON object, no prose, in exactly this shape:
  * @returns {Promise<{action:'BUY'|'HOLD', confidence:number, reasoning:string, riskScore:number, redFlags:string[]}>}
  */
 export async function analyzeNewToken(token) {
-  const prompt = `A new pump.fun token just launched. Decide whether to BUY a small position or HOLD (skip).
+  const prompt = `This is the strongest new pump.fun launch of the last window (biggest creator buy-in).
+Decide: BUY a small speculative position, or HOLD (skip)?
 
 TOKEN DATA:
 ${JSON.stringify(token, null, 2)}
 
-Consider: how much SOL is in the bonding curve, the implied market cap, whether the
-creator dumped their initial allocation, name/symbol quality, and how many red flags
-you can identify. When in doubt, HOLD. Respond with the JSON object only.`;
+Weigh: creator buy-in size (conviction) vs. how much of supply they hold (dump risk),
+implied market cap, and name/theme quality. This launch already cleared a spam filter, so
+judge it as a real candidate — if it's a reasonable speculative punt, say BUY. Respond with the JSON object only.`;
 
   const text = await claudeComplete({ system: SYSTEM, prompt });
   return parseDecision(text);
