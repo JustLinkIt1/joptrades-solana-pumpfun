@@ -18,6 +18,10 @@ export class TradingBot extends EventEmitter {
     this.feed = new PumpPortalFeed();
     this.analyzing = false;
     this.started = false;
+    this.lastAnalyzeAt = 0;
+    this.watched = 0;    // launches seen since last heartbeat
+    this.analyzed = 0;   // Claude calls since last heartbeat
+    this.skipped = 0;    // filtered out (no Claude call) since last heartbeat
   }
 
   emitEvent(ev) {
@@ -53,13 +57,34 @@ export class TradingBot extends EventEmitter {
     this.feed.onNewToken((t) => this.handleNewToken(t));
     this.feed.onTokenTrade((ev) => this.handleTokenTrade(ev));
     this.feed.connect();
+
+    // Heartbeat: show it's alive + how many Claude calls we're actually making.
+    setInterval(() => {
+      if (this.watched === 0) return;
+      this.log(
+        `⏱  last min: ${this.watched} launches seen · ${this.analyzed} analyzed by Claude · ${this.skipped} pre-filtered`,
+      );
+      this.watched = this.analyzed = this.skipped = 0;
+    }, 60_000);
   }
 
   async handleNewToken(token) {
+    this.watched++;
+
+    // --- cheap local gates first (no Claude call) ---------------------
     if (this.analyzing) return;
     if (store.openCount() >= config.maxOpenPositions) return;
     if (store.spentToday() + config.buyAmountSol > config.maxDailySpendSol) return;
 
+    // Rate limit: at most one Claude call per cooldown window.
+    if (Date.now() - this.lastAnalyzeAt < config.analyzeCooldownMs) { this.skipped++; return; }
+
+    // Skip obvious low-effort launches before spending a Claude call.
+    const creatorBuySol = Number(token.solAmount) || 0;
+    if (creatorBuySol < config.minCreatorBuySol) { this.skipped++; return; }
+
+    this.lastAnalyzeAt = Date.now();
+    this.analyzed++;
     this.analyzing = true;
     try {
       const decision = await analyzeNewToken(token);
@@ -69,9 +94,10 @@ export class TradingBot extends EventEmitter {
         `risk=${decision.riskScore.toFixed(2)} — ${decision.reasoning}`,
       );
       this.emitEvent({
-        type: 'analysis', mint: token.mint, symbol: token.symbol,
+        type: 'analysis', mint: token.mint, symbol: token.symbol, name: token.name,
+        uri: token.uri, marketCapSol: token.marketCapSol, creator: token.traderPublicKey,
         action: decision.action, confidence: decision.confidence,
-        risk: decision.riskScore, reasoning: decision.reasoning,
+        risk: decision.riskScore, reasoning: decision.reasoning, redFlags: decision.redFlags,
       });
 
       if (decision.action !== 'BUY' || decision.confidence < config.minConfidence) return;

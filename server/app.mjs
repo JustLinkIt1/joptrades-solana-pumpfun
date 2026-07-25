@@ -100,6 +100,28 @@ app.get('/api/status', async (_req, res) => {
   });
 });
 
+// Resolve a token's image (+ description) from its metadata URI. Cached.
+const metaCache = new Map();
+app.get('/api/token-meta', async (req, res) => {
+  const uri = req.query.uri;
+  if (!uri || !/^https?:\/\//.test(uri)) return res.status(400).json({ error: 'bad uri' });
+  if (metaCache.has(uri)) return res.json(metaCache.get(uri));
+  try {
+    const ctrl = AbortSignal.timeout(6000);
+    const meta = await (await fetch(uri, { signal: ctrl })).json();
+    // pump.fun metadata gateways sometimes return ipfs:// — normalize to a gateway.
+    let image = meta.image || '';
+    if (image.startsWith('ipfs://')) image = 'https://ipfs.io/ipfs/' + image.slice(7);
+    const out = { image, description: meta.description || '', name: meta.name, symbol: meta.symbol };
+    metaCache.set(uri, out);
+    res.json(out);
+  } catch (e) {
+    const out = { image: '', description: '', error: String(e.message) };
+    metaCache.set(uri, out);
+    res.json(out);
+  }
+});
+
 app.get('/api/blockhash', async (_req, res) => {
   try { res.json({ blockhash: await getLatestBlockhash(), botAddress: BOT_ADDRESS }); }
   catch (e) { res.status(500).json({ error: String(e.message) }); }
