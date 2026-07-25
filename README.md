@@ -35,7 +35,20 @@ npm run setup    # makes the bot a wallet and writes .env for you
 `setup` prints a Solana address — **send SOL to it from Phantom** to fund the bot
 (start small; treat it as fully at-risk). Check it landed with `npm run balance`.
 
-Then run everything with one command (starts the Claude proxy + the trader):
+### Option A — Web UI (recommended)
+
+One command runs the proxy, the bot, and a dashboard:
+
+```bash
+npm run ui         # dry run — open http://localhost:3000
+npm run ui:live    # real trading
+```
+
+In the browser: **Connect Phantom** (sign the message to enable withdrawals) →
+**Deposit** tab to fund the bot from Phantom → watch the **Live feed** → **Withdraw**
+tab to pull SOL back to your wallet anytime.
+
+### Option B — headless (no UI)
 
 ```bash
 npm start          # dry run — analyzes real launches, sends nothing on-chain
