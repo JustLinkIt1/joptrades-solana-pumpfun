@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JopTrades — Solana / pump.fun AI Trader</title>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#141a24; --panel2:#1b2330; --text:#e6edf3;
+    --muted:#9aa7b4; --accent:#14f195; --accent2:#9945ff; --line:#232c3a;
+    --warn:#ffb020;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f6f8fa; --panel:#ffffff; --panel2:#f0f3f6; --text:#0b0e14;
+      --muted:#586069; --line:#e1e6eb; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  a{color:var(--accent2)}
+  .wrap{max-width:860px;margin:0 auto;padding:48px 20px 80px}
+  header{text-align:center;margin-bottom:40px}
+  .badge{display:inline-block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 12px;margin-bottom:18px}
+  h1{font-size:clamp(30px,6vw,46px);margin:.2em 0;line-height:1.1}
+  h1 .g{background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);font-size:18px;max-width:600px;margin:12px auto 0}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;margin:20px 0}
+  h2{font-size:20px;margin:0 0 14px}
+  .flow{display:flex;flex-direction:column;gap:10px}
+  .step{display:flex;gap:14px;align-items:flex-start;background:var(--panel2);
+    border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .step .n{flex:0 0 28px;height:28px;border-radius:8px;display:grid;place-items:center;
+    font-weight:700;font-size:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#04121a}
+  .step b{display:block}
+  .step span{color:var(--muted);font-size:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .card b{color:var(--accent)}
+  code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:16px;overflow-x:auto;font-size:13.5px}
+  .warn{border-color:var(--warn)}
+  .warn h2{color:var(--warn)}
+  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:40px}
+  .pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);
+    border-radius:999px;padding:2px 10px;font-size:12px;margin:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge">Solana · pump.fun · Claude</div>
+    <h1>JopTrades <span class="g">AI Trader</span></h1>
+    <p class="sub">An autonomous pump.fun trading bot where <b>Claude</b> — running through
+      your own Claude Code subscription — is the analyst deciding what to buy.</p>
+    <div style="margin-top:16px">
+      <span class="pill">@solana/web3.js</span>
+      <span class="pill">PumpPortal</span>
+      <span class="pill">Claude Agent SDK</span>
+      <span class="pill">Node.js</span>
+    </div>
+  </header>
+
+  <div class="panel">
+    <h2>How it works</h2>
+    <div class="flow">
+      <div class="step"><div class="n">1</div><div><b>Listen</b>
+        <span>A PumpPortal websocket streams every new pump.fun token launch in real time.</span></div></div>
+      <div class="step"><div class="n">2</div><div><b>Analyze</b>
+        <span>Each launch is sent to Claude (via a local proxy on the Claude Agent SDK — auth is your Claude Code login). Claude returns a BUY/HOLD call with a confidence and risk score.</span></div></div>
+      <div class="step"><div class="n">3</div><div><b>Execute</b>
+        <span>On a high-confidence BUY, the bot builds the trade via PumpPortal, signs it with your wallet, and broadcasts it through your own Solana RPC.</span></div></div>
+      <div class="step"><div class="n">4</div><div><b>Manage</b>
+        <span>Held positions are watched on the trade stream and closed on take-profit or stop-loss.</span></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Built-in guardrails</h2>
+    <div class="grid">
+      <div class="card"><b>Hard caps</b><br>Max position size, max open positions, and a max daily spend — enforced on every buy no matter what Claude says.</div>
+      <div class="card"><b>Dry-run default</b><br>Ships analyzing real launches but sending nothing on-chain until you explicitly opt in.</div>
+      <div class="card"><b>Live-trading guard</b><br>Real trades require two separate env flags set on purpose — deliberate friction.</div>
+      <div class="card"><b>Kill switch</b><br>One flag halts all buying instantly while analysis keeps running.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Run it</h2>
+    <pre>git clone https://github.com/JustLinkIt1/joptrades-solana-pumpfun
+cd joptrades-solana-pumpfun
+npm install
+cp .env.example .env      # add a burner wallet key + an RPC url
+
+npm run proxy             # terminal 1 — Claude Code proxy
+npm run bot               # terminal 2 — the trader (dry-run by default)</pre>
+    <p style="color:var(--muted);font-size:14px;margin:6px 0 0">
+      The bot is a server-side Node process — it runs on your machine or a VPS, not on this page.
+      This site is just the overview.</p>
+  </div>
+
+  <div class="panel warn">
+    <h2>⚠ Risk</h2>
+    <p style="margin:0">pump.fun launch-sniping is one of the highest-variance activities in crypto.
+      Most tokens go to zero, and many are rug pulls or bundled snipes. The caps and guards limit how
+      fast a bad run — or a bug — can drain a wallet; they do <b>not</b> make this safe. Use a dedicated
+      burner wallet, size small, and treat the entire balance as at-risk. This is not financial advice.</p>
+  </div>
+
+  <footer>
+    Open source · <a href="https://github.com/JustLinkIt1/joptrades-solana-pumpfun">View on GitHub</a>
+  </footer>
+</div>
+</body>
+</html>
