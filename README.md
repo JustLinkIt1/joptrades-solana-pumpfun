@@ -24,32 +24,30 @@ new pump.fun launch ──▶ PumpPortal websocket ──▶ Claude Code proxy (
 | `src/config.mjs` | All safety caps + the live-trading guards. |
 | `src/bot.mjs` | The loop. |
 
-## Setup
+## Quick start (3 commands)
 
 ```bash
 cd solana-pumpfun
 npm install
-cp .env.example .env      # then edit .env
+npm run setup    # makes the bot a wallet and writes .env for you
 ```
 
-Fill in `.env`:
-- **`SOLANA_PRIVATE_KEY`** — a **dedicated burner** wallet, funded with only what you can lose.
-- **`SOLANA_RPC_URL`** — a paid RPC (Helius/QuickNode). The public one is too slow for sniping.
-- Sizing caps are already set conservatively — review them.
+`setup` prints a Solana address — **send SOL to it from Phantom** to fund the bot
+(start small; treat it as fully at-risk). Check it landed with `npm run balance`.
 
-Make sure you're logged into Claude Code on this machine (the proxy uses that session).
-
-## Run
-
-Two terminals:
+Then run everything with one command (starts the Claude proxy + the trader):
 
 ```bash
-npm run proxy    # terminal 1 — Claude Code proxy
+npm start          # dry run — analyzes real launches, sends nothing on-chain
+npm run start:live # real trading with the SOL you funded
 ```
 
-```bash
-npm run bot      # terminal 2 — the trader
-```
+Make sure you're logged into Claude Code on this machine — the proxy uses that session.
+
+> **Why not "connect Phantom" directly?** Phantom asks you to approve every
+> transaction in a popup and needs the browser open — impossible for a bot that
+> must fire on launches in milliseconds. So the bot uses its own wallet that you
+> fund from Phantom, and you can sweep SOL back to Phantom anytime.
 
 ## Going live (deliberate friction)
 
